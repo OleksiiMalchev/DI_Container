@@ -1,4 +1,5 @@
 package com.malchev.spring.service.Impl;
+
 import com.malchev.spring.annotation.Bean;
 import com.malchev.spring.service.LotteryMachineService;
 
@@ -9,7 +10,12 @@ public class LotteryMachineServiceImpl implements LotteryMachineService {
     public int[] selectTicket() {
         int[] ticketNumbers = new int[6];
         for (int i = 0; i < ticketNumbers.length; i++) {
-            ticketNumbers[i] = (int) (Math.random()*36+1);
+            ticketNumbers[i] = (int) (Math.random() * 36 + 1);
+            for (int j = 0; j < i; j++) {
+                if (ticketNumbers[i] == ticketNumbers[j]) {
+                    i--;
+                }
+            }
         }
         return ticketNumbers;
     }

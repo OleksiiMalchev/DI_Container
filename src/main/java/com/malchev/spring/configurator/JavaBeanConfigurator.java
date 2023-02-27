@@ -41,3 +41,5 @@ public class JavaBeanConfigurator implements BeanConfigurator {
         return (Class<? extends T>) classList.stream().findFirst().get();
     }
 }
+
+

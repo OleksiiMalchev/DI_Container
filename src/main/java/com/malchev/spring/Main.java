@@ -1,15 +1,21 @@
 package com.malchev.spring;
 
+import com.malchev.spring.annotation.AutoInjection;
+import com.malchev.spring.annotation.Bean;
 import com.malchev.spring.factory.BeanFactory;
 import com.malchev.spring.lottery.PlayTheLottery;
 
+import java.lang.reflect.InvocationTargetException;
 
+@Bean
 public class Main {
+    @AutoInjection
+    static PlayTheLottery playTheLottery;
 
-    public static void main(String[] args) {
-        BeanFactory beanFactory = new BeanFactory();
-        PlayTheLottery play = new PlayTheLottery();
-        String result = play.play();
-        System.out.println(result);
+    public static void main(String[] args) throws InvocationTargetException,
+            NoSuchMethodException, InstantiationException, IllegalAccessException {
+        BeanFactory.getInstance().createBeans();
+        String play = playTheLottery.play();
+        System.out.println(play);
     }
 }
