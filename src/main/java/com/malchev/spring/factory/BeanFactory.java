@@ -5,13 +5,11 @@ import com.malchev.spring.annotation.AutoInjection;
 import com.malchev.spring.annotation.Bean;
 import com.malchev.spring.configurator.BeanConfigurator;
 import com.malchev.spring.configurator.JavaBeanConfigurator;
+import com.malchev.spring.proxy.BeanProxyTiming;
 import com.malchev.spring.scanner.BeanScanner;
 import com.malchev.spring.scanner.BeanScannerImpl;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
+import java.lang.reflect.*;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +21,9 @@ public class BeanFactory {
     private final BeanConfigurator beanConfigurator;
     private final BeanScanner beanScanner;
     private static List<Class<?>> classesInPackage;
+    private BeanProxyTiming beanProxyTiming;
+
+
 
     public BeanFactory() {
         this.beanScanner = new BeanScannerImpl();
@@ -39,6 +40,7 @@ public class BeanFactory {
         Class<? extends T> implementationClass = clazz;
         if (implementationClass.isInterface()) {
             implementationClass = beanConfigurator.getImplClass(implementationClass);
+          //  bean = newProxyBean(clazz, new BeanProxyTiming(implementationClass));
         }
         if (implementationClass.getDeclaredConstructors().length >= 1) {
             Optional<Constructor<?>> constructor = Arrays.stream(implementationClass.getDeclaredConstructors())
@@ -55,7 +57,7 @@ public class BeanFactory {
                 setBeanToMethod(implementationClass, bean);
             }
         }
-        return bean;
+        return newProxyBean(bean);
     }
 
     public void createBeans() throws InvocationTargetException,
@@ -106,5 +108,13 @@ public class BeanFactory {
             }
         }
         return paramsConst;
+    }
+
+    private static <T> T newProxyBean (T originBean){
+        ClassLoader classLoader = originBean.getClass().getClassLoader();
+        Class<?>[] interfaces = originBean.getClass().getInterfaces();
+        BeanProxyTiming beanProxyTiming1 = new BeanProxyTiming(originBean);
+        Object beanProxy = Proxy.newProxyInstance(classLoader, interfaces, beanProxyTiming1);
+        return (T) beanProxy;
     }
 }

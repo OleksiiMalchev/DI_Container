@@ -1,5 +1,4 @@
 package com.malchev.spring.configurator;
-
 import com.malchev.spring.annotation.Bean;
 import com.malchev.spring.scanner.BeanScanner;
 import com.malchev.spring.scanner.BeanScannerImpl;
@@ -11,6 +10,8 @@ public class JavaBeanConfigurator implements BeanConfigurator {
     private final BeanScanner beanScanner;
     private Map<Class<?>, List<Class<?>>> interfaceWithImpl= new HashMap<>();
     private List<Class<?>> classesInPackage;
+
+
 
     public JavaBeanConfigurator() {
         this.beanScanner = new BeanScannerImpl();
@@ -45,6 +46,8 @@ public class JavaBeanConfigurator implements BeanConfigurator {
     public Map<Class<?>, List<Class<?>>> getMap() {
         return interfaceWithImpl;
     }
+
+
 }
 
 

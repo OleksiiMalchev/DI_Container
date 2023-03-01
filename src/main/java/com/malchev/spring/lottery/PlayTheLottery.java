@@ -10,9 +10,9 @@ import java.util.Arrays;
 import java.util.Scanner;
 
 @Bean
-public class PlayTheLottery  {
+public class PlayTheLottery implements PlayLottery  {
     @AutoInjection
-    private CashBoxService cashBoxService;
+    private  CashBoxService cashBoxService;
 
     private LotteryMachineService lotteryMachineService;
 
@@ -21,7 +21,7 @@ public class PlayTheLottery  {
     private final int[] userTicket = new int[6];
 
     @AutoInjection
-    public PlayTheLottery(CheckTicketService checkTicketService) {
+    public PlayTheLottery(CashBoxService cashBoxService, CheckTicketService checkTicketService) {
         this.checkTicketService = checkTicketService;
     }
 
