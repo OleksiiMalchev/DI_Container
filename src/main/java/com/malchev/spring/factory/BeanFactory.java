@@ -17,7 +17,7 @@ import java.util.Optional;
 
 
 public class BeanFactory {
-    private static final BeanFactory BEAN_FACTORY = new BeanFactory();
+    private static final BeanFactory BEAN_FACTORY = new BeanFactory(); // потокобезопастность?
     private final BeanConfigurator beanConfigurator;
     private final BeanScanner beanScanner;
     private static List<Class<?>> classesInPackage;
@@ -25,7 +25,7 @@ public class BeanFactory {
 
 
 
-    public BeanFactory() {
+    private BeanFactory() {
         this.beanScanner = new BeanScannerImpl();
         this.beanConfigurator = new JavaBeanConfigurator();
         this.classesInPackage = this.beanScanner.findClassInPackage();
@@ -40,7 +40,6 @@ public class BeanFactory {
         Class<? extends T> implementationClass = clazz;
         if (implementationClass.isInterface()) {
             implementationClass = beanConfigurator.getImplClass(implementationClass);
-          //  bean = newProxyBean(clazz, new BeanProxyTiming(implementationClass));
         }
         if (implementationClass.getDeclaredConstructors().length >= 1) {
             Optional<Constructor<?>> constructor = Arrays.stream(implementationClass.getDeclaredConstructors())
