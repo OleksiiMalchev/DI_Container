@@ -40,6 +40,11 @@ public class JavaBeanConfigurator implements BeanConfigurator {
         }
         return (Class<? extends T>) classList.stream().findFirst().get();
     }
+
+    @Override
+    public Map<Class<?>, List<Class<?>>> getMap() {
+        return interfaceWithImpl;
+    }
 }
 
 

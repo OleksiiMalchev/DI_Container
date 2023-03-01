@@ -5,6 +5,7 @@ import com.malchev.spring.annotation.Bean;
 import com.malchev.spring.factory.BeanFactory;
 import com.malchev.spring.lottery.PlayTheLottery;
 
+
 import java.lang.reflect.InvocationTargetException;
 
 @Bean

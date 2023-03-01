@@ -11,11 +11,11 @@ import com.malchev.spring.scanner.BeanScannerImpl;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.TypeVariable;
-import java.util.ArrayList;
+import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Stream;
+import java.util.Map;
+import java.util.Optional;
 
 
 public class BeanFactory {
@@ -34,27 +34,26 @@ public class BeanFactory {
         return BEAN_FACTORY;
     }
 
-    public <T> T getBean(Class<T> clazz) throws NoSuchMethodException, InvocationTargetException,
-            InstantiationException, IllegalAccessException {
+    public <T> T getBean(Class<T> clazz) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
+        T bean = null;
         Class<? extends T> implementationClass = clazz;
         if (implementationClass.isInterface()) {
             implementationClass = beanConfigurator.getImplClass(implementationClass);
         }
-        if (implementationClass.getDeclaredConstructors().length != 1) {
-            Constructor constructor = Arrays.stream(implementationClass.getDeclaredConstructors())
-                    .filter(c -> c.isAnnotationPresent(AutoInjection.class)).findAny().get();
-            List<Class> classes = Arrays.stream(constructor.getParameterTypes()).toList();
-            Object[] objects = checkParamForConstructor(classes);
-            T bean = (T) constructor.newInstance(constructor);
-
-        }
-        T bean = implementationClass.getDeclaredConstructor().newInstance();
-
-        List<Field> fields = Arrays.stream(implementationClass.getDeclaredFields())
-                .filter(f -> f.isAnnotationPresent(AutoInjection.class)).toList();
-        for (Field field : fields) {
-            field.setAccessible(true);
-            field.set(bean, BEAN_FACTORY.getBean(field.getType()));
+        if (implementationClass.getDeclaredConstructors().length >= 1) {
+            Optional<Constructor<?>> constructor = Arrays.stream(implementationClass.getDeclaredConstructors())
+                    .filter(c -> c.isAnnotationPresent(AutoInjection.class)).findAny();
+            if (constructor.isEmpty()) {
+                bean = implementationClass.getDeclaredConstructor().newInstance();
+                setBeanToField(implementationClass, bean);
+                setBeanToMethod(implementationClass, bean);
+            } else {
+                List<Class<?>> classes = Arrays.stream(constructor.get().getParameterTypes()).toList();
+                Object[] objects = checkParamForConstructor(classes);
+                bean = (T) constructor.get().newInstance(objects);
+                setBeanToField(implementationClass, bean);
+                setBeanToMethod(implementationClass, bean);
+            }
         }
         return bean;
     }
@@ -69,23 +68,40 @@ public class BeanFactory {
         }
     }
 
-    private void setBeanToField(List<Field> fields, Object bean) throws InvocationTargetException,
+    private void setBeanToField(Class<?> clazz, Object bean) throws InvocationTargetException,
             NoSuchMethodException, InstantiationException, IllegalAccessException {
+        List<Field> fields = Arrays.stream(clazz.getDeclaredFields())
+                .filter(f -> f.isAnnotationPresent(AutoInjection.class)).toList();
         for (Field field : fields) {
             field.setAccessible(true);
             field.set(bean, BEAN_FACTORY.getBean(field.getType()));
         }
     }
 
-    private Object[] checkParamForConstructor(List<Class> params) throws InvocationTargetException,
+    private void setBeanToMethod(Class<?> clazz, Object bean) throws InvocationTargetException, NoSuchMethodException,
+            InstantiationException, IllegalAccessException {
+        List<Method> methods = Arrays.stream(clazz.getDeclaredMethods())
+                .filter(m -> m.isAnnotationPresent(AutoInjection.class)).toList();
+        for (Method method : methods) {
+            Class<?> aClass = Arrays.stream(method.getParameterTypes()).findAny().get();
+            Map<Class<?>, List<Class<?>>> map = beanConfigurator.getMap();
+            Class<?> aClass1 = map.get(aClass).stream().findAny().get();
+            Object beanParam = getBean(aClass1);
+            method.invoke(bean, beanParam);
+        }
+
+    }
+
+    private Object[] checkParamForConstructor(List<Class<?>> params) throws InvocationTargetException,
             NoSuchMethodException, InstantiationException, IllegalAccessException {
         Object[] paramsConst = new Object[params.size()];
         int count = 0;
         for (Class<?> clazzParam : params) {
             for (Class<?> clazzPack : classesInPackage) {
-                if (clazzParam.equals(clazzPack)) {
-                    Object bean = getBean(clazzParam);
-                    params.set(0, (Class) bean);
+                if (clazzParam.equals(clazzPack) && clazzParam.isAnnotationPresent(Bean.class)) {
+                    Object bean = getBean(clazzPack);
+                    paramsConst[count] = bean;
+                    count++;
                 }
             }
         }
