@@ -22,38 +22,42 @@ public class BeanFactory {
     private final BeanScanner beanScanner;
     private static List<Class<?>> classesInPackage;
     private BeanProxyTiming beanProxyTiming;
-
+    private Map<Class<?>, List<Class<?>>> map;
 
 
     private BeanFactory() {
         this.beanScanner = new BeanScannerImpl();
         this.beanConfigurator = new JavaBeanConfigurator();
         this.classesInPackage = this.beanScanner.findClassInPackage();
+        this.map = beanConfigurator.getMap();
     }
 
     public static BeanFactory getInstance() {
         return BEAN_FACTORY;
     }
 
-    public <T> T getBean(Class<T> clazz) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
+    public <T> T getBean(Class<T> clazz) throws NoSuchMethodException, InvocationTargetException,
+            InstantiationException, IllegalAccessException {
         T bean = null;
-        Class<? extends T> implementationClass = clazz;
-        if (implementationClass.isInterface()) {
-            implementationClass = beanConfigurator.getImplClass(implementationClass);
-        }
-        if (implementationClass.getDeclaredConstructors().length >= 1) {
-            Optional<Constructor<?>> constructor = Arrays.stream(implementationClass.getDeclaredConstructors())
-                    .filter(c -> c.isAnnotationPresent(AutoInjection.class)).findAny();
-            if (constructor.isEmpty()) {
-                bean = implementationClass.getDeclaredConstructor().newInstance();
-                setBeanToField(implementationClass, bean);
-                setBeanToMethod(implementationClass, bean);
-            } else {
-                List<Class<?>> classes = Arrays.stream(constructor.get().getParameterTypes()).toList();
-                Object[] objects = checkParamForConstructor(classes);
-                bean = (T) constructor.get().newInstance(objects);
-                setBeanToField(implementationClass, bean);
-                setBeanToMethod(implementationClass, bean);
+        if (map.containsKey(clazz) || map.containsValue(clazz)) {
+            Class<? extends T> implementationClass = clazz;
+            if (implementationClass.isInterface()) {
+                implementationClass = beanConfigurator.getImplClass(implementationClass);
+            }
+            if (implementationClass.getDeclaredConstructors().length >= 1) {
+                Optional<Constructor<?>> constructor = Arrays.stream(implementationClass.getDeclaredConstructors())
+                        .filter(c -> c.isAnnotationPresent(AutoInjection.class)).findAny();
+                if (constructor.isEmpty()) {
+                    bean = implementationClass.getDeclaredConstructor().newInstance();
+                    setBeanToField(implementationClass, bean);
+                    setBeanToMethod(implementationClass, bean);
+                } else {
+                    List<Class<?>> classes = Arrays.stream(constructor.get().getParameterTypes()).toList();
+                    Object[] objects = checkParamForConstructor(classes);
+                    bean = (T) constructor.get().newInstance(objects);
+                    setBeanToField(implementationClass, bean);
+                    setBeanToMethod(implementationClass, bean);
+                }
             }
         }
         return newProxyBean(bean);
@@ -61,13 +65,13 @@ public class BeanFactory {
 
     public void createBeans() throws InvocationTargetException,
             NoSuchMethodException, InstantiationException, IllegalAccessException {
-        for (Class<?> clazz : classesInPackage) {
-            if (!clazz.isAnnotationPresent(Bean.class)) {
-                continue;
+        for (List<Class<?>> clazz : map.values()) {
+            for (Class<?> listClass : clazz) {
+                BEAN_FACTORY.getBean(listClass);
             }
-            BEAN_FACTORY.getBean(clazz);
         }
     }
+
 
     private void setBeanToField(Class<?> clazz, Object bean) throws InvocationTargetException,
             NoSuchMethodException, InstantiationException, IllegalAccessException {
@@ -109,7 +113,7 @@ public class BeanFactory {
         return paramsConst;
     }
 
-    private static <T> T newProxyBean (T originBean){
+    private static <T> T newProxyBean(T originBean) {
         ClassLoader classLoader = originBean.getClass().getClassLoader();
         Class<?>[] interfaces = originBean.getClass().getInterfaces();
         BeanProxyTiming beanProxyTiming1 = new BeanProxyTiming(originBean);

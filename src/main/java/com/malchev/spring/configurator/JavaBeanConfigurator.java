@@ -20,21 +20,6 @@ public class JavaBeanConfigurator implements BeanConfigurator {
 
     @Override
     public <T> Class<? extends T> getImplClass(Class<T> interfaceClass) {
-
-        for(Class<?> clazz:classesInPackage){
-            if(!clazz.isAnnotationPresent(Bean.class)){
-                continue;
-            }
-            if(clazz.isInterface()){
-                List<Class<?>> implClass = new ArrayList<>();
-                for(Class<?> iClass:classesInPackage){
-                    if(!iClass.isInterface()&& Arrays.asList(iClass.getInterfaces()).contains(clazz)){
-                        implClass.add(iClass);
-                    }
-                }
-                interfaceWithImpl.put(clazz,implClass);
-            }
-        }
         List<Class<?>> classList = interfaceWithImpl.get(interfaceClass);
         if(classList.size()!=1){
             throw new RuntimeException("Interface has 0 or more than 1 impl");
@@ -44,10 +29,19 @@ public class JavaBeanConfigurator implements BeanConfigurator {
 
     @Override
     public Map<Class<?>, List<Class<?>>> getMap() {
+        for(Class<?> clazz:classesInPackage){
+            if(clazz.isAnnotationPresent(Bean.class)){
+                List<Class<?>> implClass = new ArrayList<>();
+                for(Class<?> iClass:classesInPackage){
+                    if(!iClass.isInterface()&& Arrays.asList(iClass.getInterfaces()).contains(clazz)){
+                        implClass.add(iClass);
+                    }
+                }
+                interfaceWithImpl.put(clazz,implClass);
+            }
+        }
         return interfaceWithImpl;
     }
-
-
 }
 
 

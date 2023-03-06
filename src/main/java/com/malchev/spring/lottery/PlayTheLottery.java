@@ -2,6 +2,7 @@ package com.malchev.spring.lottery;
 
 import com.malchev.spring.annotation.AutoInjection;
 import com.malchev.spring.annotation.Bean;
+import com.malchev.spring.annotation.Lazy;
 import com.malchev.spring.service.CashBoxService;
 import com.malchev.spring.service.CheckTicketService;
 import com.malchev.spring.service.LotteryMachineService;
@@ -11,7 +12,9 @@ import java.util.Scanner;
 
 @Bean
 public class PlayTheLottery implements PlayLottery  {
+
     @AutoInjection
+    @Lazy
     private  CashBoxService cashBoxService;
 
     private LotteryMachineService lotteryMachineService;
@@ -21,7 +24,7 @@ public class PlayTheLottery implements PlayLottery  {
     private final int[] userTicket = new int[6];
 
     @AutoInjection
-    public PlayTheLottery(CashBoxService cashBoxService, CheckTicketService checkTicketService) {
+    public PlayTheLottery(CheckTicketService checkTicketService) {
         this.checkTicketService = checkTicketService;
     }
 

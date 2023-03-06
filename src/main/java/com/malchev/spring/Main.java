@@ -2,8 +2,6 @@ package com.malchev.spring;
 
 import com.malchev.spring.factory.BeanFactory;
 import com.malchev.spring.lottery.PlayLottery;
-
-
 import java.lang.reflect.InvocationTargetException;
 
 public class Main {
